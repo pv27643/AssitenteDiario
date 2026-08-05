@@ -30,12 +30,10 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      # .env.local vai commitado no repo (só tem valores públicos) — o
+      # Vite lê-o automaticamente, sem precisar de secrets aqui.
       - name: Build
         run: npm run build
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
 
       - name: Preparar artefacto do Pages
         uses: actions/upload-pages-artifact@v3

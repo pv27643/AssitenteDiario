@@ -3,8 +3,10 @@ dist
 dist-ssr
 *.tsbuildinfo
 *.local
-.env.local
-.env*.local
+# .env.local só tem valores públicos (URL, anon key, VAPID public key —
+# nenhum deles é secreto, ficam visíveis no bundle de qualquer forma),
+# por isso fica commitado para o build do GitHub Actions o encontrar.
+!.env.local
 
 # Editor
 .vscode/*
