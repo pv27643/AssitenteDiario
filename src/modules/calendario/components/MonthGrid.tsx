@@ -5,7 +5,7 @@ interface MonthGridProps {
   year: number;
   month: number;
   itemsByDate: Map<string, CalendarItem[]>;
-  selectedDate: string;
+  selectedDate: string | null;
   onSelectDate: (date: string) => void;
 }
 

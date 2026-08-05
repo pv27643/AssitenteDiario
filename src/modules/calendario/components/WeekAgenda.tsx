@@ -5,7 +5,7 @@ import type { CalendarItem } from "../types";
 interface WeekAgendaProps {
   referenceDate: string;
   itemsByDate: Map<string, CalendarItem[]>;
-  selectedDate: string;
+  selectedDate: string | null;
   onSelectDate: (date: string) => void;
 }
 

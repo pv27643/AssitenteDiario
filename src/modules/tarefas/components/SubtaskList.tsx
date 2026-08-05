@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
+import ConfirmButton from "@/shared/components/ConfirmButton";
 import type { Subtask } from "../types";
 
 interface SubtaskListProps {
@@ -35,14 +36,7 @@ export default function SubtaskList({ taskId, subtasks, onAdd, onToggle, onDelet
             />
             <span className={subtask.done ? "text-zinc-500 line-through" : "text-zinc-200"}>{subtask.title}</span>
           </label>
-          <button
-            type="button"
-            onClick={() => onDelete(subtask.id)}
-            aria-label={`Remover subtarefa ${subtask.title}`}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-red-500"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+          <ConfirmButton label={`Remover subtarefa ${subtask.title}`} onConfirm={() => onDelete(subtask.id)} />
         </div>
       ))}
 

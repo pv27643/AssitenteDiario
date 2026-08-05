@@ -1,4 +1,5 @@
-import type { CalendarItem } from "./types";
+import { EVENT_RECURRENCE_UNIT_OPTIONS } from "./types";
+import type { CalendarItem, Event, EventRecurrenceUnit } from "./types";
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -107,6 +108,143 @@ export function addWeeks(referenceDate: string, delta: number): string {
   const date = new Date(`${referenceDate}T00:00:00`);
   date.setDate(date.getDate() + delta * 7);
   return toIsoDate(date);
+}
+
+const MONTH_LABELS = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
+
+export interface MonthItemCount {
+  month: number;
+  label: string;
+  count: number;
+}
+
+/** Nº de itens (eventos + prazos de tarefas) por mês, para a vista Anual. */
+export function countItemsByMonth(items: CalendarItem[], year: number): MonthItemCount[] {
+  const countsByMonth = new Map<number, number>();
+
+  for (const item of items) {
+    const [itemYear, itemMonth] = item.date.split("-").map(Number);
+    if (itemYear !== year) continue;
+    countsByMonth.set(itemMonth, (countsByMonth.get(itemMonth) ?? 0) + 1);
+  }
+
+  return MONTH_LABELS.map((label, index) => ({
+    month: index + 1,
+    label,
+    count: countsByMonth.get(index + 1) ?? 0,
+  }));
+}
+
+const RECURRING_EXPANSION_YEARS_AHEAD = 2;
+const RECURRING_EXPANSION_MAX_OCCURRENCES = 500;
+
+/**
+ * Datas de ocorrência de um evento recorrente, a partir da 1ª data até
+ * ~2 anos no futuro — nunca guardadas na BD, só calculadas ao desenhar
+ * o calendário (o evento continua a ser uma única linha em events).
+ * "interval" é o "de quantos em quantos" (ex: unit="dias", interval=5
+ * → de 5 em 5 dias).
+ */
+export function expandEventOccurrences(
+  startDate: string,
+  unit: NonNullable<EventRecurrenceUnit>,
+  interval: number,
+): string[] {
+  const dates: string[] = [];
+  const current = new Date(`${startDate}T00:00:00`);
+  const end = new Date();
+  end.setFullYear(end.getFullYear() + RECURRING_EXPANSION_YEARS_AHEAD);
+
+  const step = Math.max(1, Math.floor(interval));
+  let iterations = 0;
+  while (current <= end && iterations < RECURRING_EXPANSION_MAX_OCCURRENCES) {
+    dates.push(toIsoDate(current));
+    if (unit === "dias") current.setDate(current.getDate() + step);
+    else if (unit === "semanas") current.setDate(current.getDate() + step * 7);
+    else if (unit === "meses") current.setMonth(current.getMonth() + step);
+    else current.setFullYear(current.getFullYear() + step);
+    iterations += 1;
+  }
+
+  return dates;
+}
+
+/** "Cada 5 dias", "Cada semana"... para mostrar junto de um evento recorrente. */
+export function formatEventRecurrence(unit: NonNullable<EventRecurrenceUnit>, interval: number): string {
+  const option = EVENT_RECURRENCE_UNIT_OPTIONS.find((entry) => entry.value === unit);
+  const unitLabel = interval === 1 ? (option?.labelSingular ?? unit) : (option?.label ?? unit);
+  return `Cada ${interval === 1 ? "" : `${interval} `}${unitLabel}`;
+}
+
+export interface DateRange {
+  start: string;
+  end: string;
+}
+
+/** Intervalo [start, end) da semana (segunda a domingo) que contém a data de referência. */
+export function getWeekRange(referenceDate: string): DateRange {
+  const days = buildWeekDays(referenceDate);
+  const end = new Date(`${days[6].date}T00:00:00`);
+  end.setDate(end.getDate() + 1);
+  return { start: days[0].date, end: toIsoDate(end) };
+}
+
+/** Intervalo [start, end) de um mês. */
+export function getMonthRange(year: number, month: number): DateRange {
+  const start = `${year}-${pad(month)}-01`;
+  const next = new Date(year, month, 1);
+  return { start, end: toIsoDate(next) };
+}
+
+/** Intervalo [start, end) de um ano. */
+export function getYearRange(year: number): DateRange {
+  return { start: `${year}-01-01`, end: `${year + 1}-01-01` };
+}
+
+export function filterItemsByRange(items: CalendarItem[], range: DateRange): CalendarItem[] {
+  return items.filter((item) => item.date >= range.start && item.date < range.end);
+}
+
+export interface RecurringEventGroup {
+  unit: NonNullable<EventRecurrenceUnit>;
+  label: string;
+  events: Event[];
+}
+
+const RECURRING_GROUP_ORDER: { unit: NonNullable<EventRecurrenceUnit>; label: string }[] = [
+  { unit: "dias", label: "Eventos diários" },
+  { unit: "semanas", label: "Eventos semanais" },
+  { unit: "meses", label: "Eventos mensais" },
+  { unit: "anos", label: "Eventos anuais" },
+];
+
+/** Eventos recorrentes (as séries, não as ocorrências), agrupados por dias/semanas/meses/anos. */
+export function groupRecurringEvents(items: CalendarItem[]): RecurringEventGroup[] {
+  const uniqueEvents = new Map<string, Event>();
+  for (const item of items) {
+    if (item.source === "event" && item.event.recurrence_unit) {
+      uniqueEvents.set(item.event.id, item.event);
+    }
+  }
+
+  return RECURRING_GROUP_ORDER.map(({ unit, label }) => ({
+    unit,
+    label,
+    events: Array.from(uniqueEvents.values()).filter((event) => event.recurrence_unit === unit),
+  })).filter((group) => group.events.length > 0);
 }
 
 export function groupByDate(items: CalendarItem[]): Map<string, CalendarItem[]> {

@@ -1,16 +1,16 @@
-import { Trash2 } from "lucide-react";
-import { EXPENSE_CATEGORIES } from "../types";
-import type { Expense } from "../types";
+import ConfirmButton from "@/shared/components/ConfirmButton";
+import type { Category, Expense } from "../types";
 import { formatCurrency, formatDate } from "../utils";
 
 interface ExpenseListProps {
   expenses: Expense[];
+  categories: Category[];
   onDelete: (id: string) => void;
 }
 
-const categoryLabels = new Map(EXPENSE_CATEGORIES.map((c) => [c.value, c.label]));
+export default function ExpenseList({ expenses, categories, onDelete }: ExpenseListProps) {
+  const categoryLabels = new Map(categories.map((c) => [c.id, c.name]));
 
-export default function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
   if (expenses.length === 0) {
     return <p className="text-sm text-zinc-500">Sem despesas para mostrar.</p>;
   }
@@ -18,11 +18,11 @@ export default function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
   return (
     <ul className="flex flex-col divide-y divide-zinc-800 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
       {expenses.map((expense) => (
-        <li key={expense.id} className="flex items-center gap-3 px-4 py-3">
+        <li key={expense.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium text-white">
-                {categoryLabels.get(expense.category) ?? expense.category}
+                {expense.category_id ? (categoryLabels.get(expense.category_id) ?? "Categoria removida") : "Sem categoria"}
               </span>
               {expense.recurring && (
                 <span className="rounded-full border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-400">
@@ -35,15 +35,10 @@ export default function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
               {expense.description ? ` · ${expense.description}` : ""}
             </p>
           </div>
-          <span className="shrink-0 text-sm font-semibold text-white">{formatCurrency(expense.amount)}</span>
-          <button
-            type="button"
-            onClick={() => onDelete(expense.id)}
-            aria-label="Remover despesa"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-red-500"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
+            <span className="text-sm font-semibold text-white">{formatCurrency(expense.amount)}</span>
+            <ConfirmButton label="Remover despesa" onConfirm={() => onDelete(expense.id)} />
+          </div>
         </li>
       ))}
     </ul>

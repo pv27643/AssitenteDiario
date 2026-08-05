@@ -40,7 +40,12 @@ export default function DashboardPage() {
   const todayTasks = useMemo(() => tasks.filter((task) => task.due_date === today), [tasks, today]);
 
   const now = new Date();
-  const { expenses, budgets, loading: expensesLoading } = useExpenses(now.getFullYear(), now.getMonth() + 1);
+  const {
+    expenses,
+    budgets,
+    categories: expenseCategories,
+    loading: expensesLoading,
+  } = useExpenses(now.getFullYear(), now.getMonth() + 1);
   const monthTotal = useMemo(
     () => expenses.reduce((sum, expense) => sum + Number(expense.amount), 0),
     [expenses],
@@ -102,7 +107,7 @@ export default function DashboardPage() {
           <p className="text-sm text-zinc-500">A carregar...</p>
         ) : (
           <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 sm:p-6">
-            <CategoryBars expenses={expenses} budgets={budgets} />
+            <CategoryBars expenses={expenses} budgets={budgets} categories={expenseCategories} />
           </div>
         )}
       </section>

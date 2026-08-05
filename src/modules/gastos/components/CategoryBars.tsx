@@ -1,14 +1,15 @@
-import type { Budget, Expense } from "../types";
+import type { Budget, Category, Expense } from "../types";
 import { computeCategoryTotals, formatCurrency } from "../utils";
 
 interface CategoryBarsProps {
   expenses: Expense[];
   budgets: Budget[];
+  categories: Category[];
 }
 
-export default function CategoryBars({ expenses, budgets }: CategoryBarsProps) {
-  const categoryTotals = computeCategoryTotals(expenses);
-  const budgetByCategory = new Map(budgets.map((budget) => [budget.category, Number(budget.monthly_limit)]));
+export default function CategoryBars({ expenses, budgets, categories }: CategoryBarsProps) {
+  const categoryTotals = computeCategoryTotals(expenses, categories);
+  const budgetByCategory = new Map(budgets.map((budget) => [budget.category_id, Number(budget.monthly_limit)]));
 
   if (categoryTotals.length === 0) {
     return <p className="text-sm text-zinc-500">Sem despesas registadas neste mês.</p>;
@@ -17,7 +18,7 @@ export default function CategoryBars({ expenses, budgets }: CategoryBarsProps) {
   return (
     <div className="flex flex-col gap-4">
       {categoryTotals.map((entry) => {
-        const limit = budgetByCategory.get(entry.category) ?? null;
+        const limit = entry.categoryId ? (budgetByCategory.get(entry.categoryId) ?? null) : null;
         const budgetRatio = limit ? entry.total / limit : null;
         const isOverBudget = budgetRatio !== null && budgetRatio >= 1;
         const isNearBudget = budgetRatio !== null && budgetRatio >= 0.8 && budgetRatio < 1;
@@ -25,7 +26,7 @@ export default function CategoryBars({ expenses, budgets }: CategoryBarsProps) {
         const barColor = isOverBudget ? "bg-red-600" : isNearBudget ? "bg-red-500/60" : "bg-zinc-300";
 
         return (
-          <div key={entry.category}>
+          <div key={entry.categoryId ?? "sem-categoria"}>
             <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2 text-sm">
               <span className="font-medium text-white">{entry.label}</span>
               <span className={isOverBudget ? "text-red-500" : "text-zinc-400"}>

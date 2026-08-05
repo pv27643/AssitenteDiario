@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/shared/lib/supabase";
 import { useAuth } from "@/shared/context/AuthContext";
 import type { CalendarItem, Event, EventUpdateInput, NewEventInput, TaskDeadline } from "../types";
+import { expandEventOccurrences } from "../utils";
 
 interface MutationResult {
   error: string | null;
@@ -48,15 +49,33 @@ export function useEvents(): UseEventsResult {
       return;
     }
 
-    const eventItems: CalendarItem[] = ((eventsResult.data ?? []) as Event[]).map((event) => ({
-      source: "event",
-      id: event.id,
-      date: event.event_date,
-      time: event.event_time,
-      title: event.title,
-      category: event.category,
-      event,
-    }));
+    const eventItems: CalendarItem[] = ((eventsResult.data ?? []) as Event[]).flatMap((event) => {
+      if (!event.recurrence_unit || !event.recurrence_interval) {
+        return [
+          {
+            source: "event" as const,
+            id: event.id,
+            date: event.event_date,
+            time: event.event_time,
+            title: event.title,
+            category: event.category,
+            event,
+          },
+        ];
+      }
+
+      return expandEventOccurrences(event.event_date, event.recurrence_unit, event.recurrence_interval).map(
+        (date) => ({
+          source: "event" as const,
+          id: `${event.id}::${date}`,
+          date,
+          time: event.event_time,
+          title: event.title,
+          category: event.category,
+          event,
+        }),
+      );
+    });
 
     const taskItems: CalendarItem[] = tasksResult.error
       ? []
@@ -87,6 +106,9 @@ export function useEvents(): UseEventsResult {
       event_date: input.event_date,
       event_time: input.event_time || null,
       category: input.category || null,
+      recurrence_unit: input.recurrence_unit ?? null,
+      recurrence_interval: input.recurrence_unit ? (input.recurrence_interval ?? 1) : null,
+      notify_lead_hours: input.notify_lead_hours ?? null,
     });
 
     if (insertError) {

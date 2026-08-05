@@ -1,5 +1,4 @@
-import { EXPENSE_CATEGORIES } from "./types";
-import type { Expense, ExpenseCategory } from "./types";
+import type { Category, Expense } from "./types";
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -34,48 +33,89 @@ export function formatMonthLabel(year: number, month: number): string {
 }
 
 export interface CategoryTotal {
-  category: ExpenseCategory;
+  categoryId: string | null;
   label: string;
   total: number;
   percentage: number;
 }
 
-/** Totais por categoria, só as que têm despesas, ordenadas da maior para a menor. */
-export function computeCategoryTotals(expenses: Expense[]): CategoryTotal[] {
-  const totalsByCategory = new Map<ExpenseCategory, number>();
+const UNCATEGORIZED_LABEL = "Sem categoria";
+
+/** Totais por categoria (incluindo despesas sem categoria), ordenados da maior para a menor. */
+export function computeCategoryTotals(expenses: Expense[], categories: Category[]): CategoryTotal[] {
+  const categoryLabel = new Map(categories.map((c) => [c.id, c.name]));
+  const totalsByCategory = new Map<string | null, number>();
   let grandTotal = 0;
 
   for (const expense of expenses) {
     const amount = Number(expense.amount);
-    totalsByCategory.set(expense.category, (totalsByCategory.get(expense.category) ?? 0) + amount);
+    totalsByCategory.set(expense.category_id, (totalsByCategory.get(expense.category_id) ?? 0) + amount);
     grandTotal += amount;
   }
 
-  return EXPENSE_CATEGORIES.map(({ value, label }) => {
-    const total = totalsByCategory.get(value) ?? 0;
-    return {
-      category: value,
-      label,
+  return Array.from(totalsByCategory.entries())
+    .map(([categoryId, total]) => ({
+      categoryId,
+      label: categoryId ? (categoryLabel.get(categoryId) ?? "Categoria removida") : UNCATEGORIZED_LABEL,
       total,
       percentage: grandTotal > 0 ? (total / grandTotal) * 100 : 0,
-    };
-  })
-    .filter((entry) => entry.total > 0)
+    }))
     .sort((a, b) => b.total - a.total);
+}
+
+const MONTH_LABELS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+export interface PeriodTotal {
+  label: string;
+  total: number;
+}
+
+/** Totais por mês (Jan-Dez) de um ano específico. */
+export function computeMonthlyTotals(expenses: Expense[], year: number): PeriodTotal[] {
+  const totalsByMonth = new Map<number, number>();
+
+  for (const expense of expenses) {
+    const [expenseYear, expenseMonth] = expense.spent_at.split("-").map(Number);
+    if (expenseYear !== year) continue;
+    totalsByMonth.set(expenseMonth, (totalsByMonth.get(expenseMonth) ?? 0) + Number(expense.amount));
+  }
+
+  return MONTH_LABELS.map((label, index) => ({
+    label,
+    total: totalsByMonth.get(index + 1) ?? 0,
+  }));
+}
+
+/** Totais por ano, dos anos com pelo menos uma despesa, do mais antigo para o mais recente. */
+export function computeYearlyTotals(expenses: Expense[]): PeriodTotal[] {
+  const totalsByYear = new Map<number, number>();
+
+  for (const expense of expenses) {
+    const year = Number(expense.spent_at.slice(0, 4));
+    totalsByYear.set(year, (totalsByYear.get(year) ?? 0) + Number(expense.amount));
+  }
+
+  return Array.from(totalsByYear.entries())
+    .sort(([yearA], [yearB]) => yearA - yearB)
+    .map(([year, total]) => ({ label: String(year), total }));
+}
+
+export function filterExpensesByYear(expenses: Expense[], year: number): Expense[] {
+  return expenses.filter((expense) => expense.spent_at.startsWith(String(year)));
 }
 
 function escapeCsvField(value: string): string {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
-export function exportExpensesToCsv(expenses: Expense[], year: number, month: number): void {
-  const categoryLabel = new Map(EXPENSE_CATEGORIES.map((c) => [c.value, c.label]));
+export function exportExpensesToCsv(expenses: Expense[], categories: Category[], filenameSuffix: string): void {
+  const categoryLabel = new Map(categories.map((c) => [c.id, c.name]));
   const header = ["Data", "Categoria", "Valor (EUR)", "Descrição", "Recorrente"];
 
   const rows = expenses.map((expense) =>
     [
       expense.spent_at,
-      categoryLabel.get(expense.category) ?? expense.category,
+      expense.category_id ? (categoryLabel.get(expense.category_id) ?? UNCATEGORIZED_LABEL) : UNCATEGORIZED_LABEL,
       Number(expense.amount).toFixed(2),
       expense.description ?? "",
       expense.recurring ? "Sim" : "Não",
@@ -91,7 +131,7 @@ export function exportExpensesToCsv(expenses: Expense[], year: number, month: nu
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `gastos-${year}-${pad(month)}.csv`;
+  link.download = `gastos-${filenameSuffix}.csv`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

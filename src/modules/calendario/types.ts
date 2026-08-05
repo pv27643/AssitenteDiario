@@ -1,3 +1,5 @@
+export type EventRecurrenceUnit = "dias" | "semanas" | "meses" | "anos" | null;
+
 export interface Event {
   id: string;
   user_id: string;
@@ -6,6 +8,9 @@ export interface Event {
   event_time: string | null;
   linked_task_id: string | null;
   category: string | null;
+  recurrence_unit: EventRecurrenceUnit;
+  recurrence_interval: number | null;
+  notify_lead_hours: number | null;
   created_at: string;
 }
 
@@ -14,9 +19,23 @@ export interface NewEventInput {
   event_date: string;
   event_time?: string | null;
   category?: string | null;
+  recurrence_unit?: EventRecurrenceUnit;
+  recurrence_interval?: number | null;
+  notify_lead_hours?: number | null;
 }
 
 export type EventUpdateInput = Partial<NewEventInput>;
+
+export const EVENT_RECURRENCE_UNIT_OPTIONS: {
+  value: NonNullable<EventRecurrenceUnit>;
+  label: string;
+  labelSingular: string;
+}[] = [
+  { value: "dias", label: "dias", labelSingular: "dia" },
+  { value: "semanas", label: "semanas", labelSingular: "semana" },
+  { value: "meses", label: "meses", labelSingular: "mês" },
+  { value: "anos", label: "anos", labelSingular: "ano" },
+];
 
 /**
  * Forma mínima de uma tarefa com prazo, só para aparecer no calendário.

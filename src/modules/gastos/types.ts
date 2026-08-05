@@ -1,9 +1,14 @@
-export type ExpenseCategory = "alimentacao" | "gasolina" | "casa" | "lazer" | "outros";
+export interface Category {
+  id: string;
+  user_id: string;
+  name: string;
+  created_at: string;
+}
 
 export interface Expense {
   id: string;
   user_id: string;
-  category: ExpenseCategory;
+  category_id: string | null;
   amount: number;
   description: string | null;
   spent_at: string;
@@ -12,7 +17,7 @@ export interface Expense {
 }
 
 export interface NewExpenseInput {
-  category: ExpenseCategory;
+  category_id: string;
   amount: number;
   spent_at: string;
   description?: string;
@@ -22,15 +27,7 @@ export interface NewExpenseInput {
 export interface Budget {
   id: string;
   user_id: string;
-  category: ExpenseCategory;
+  category_id: string;
   monthly_limit: number;
   created_at: string;
 }
-
-export const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
-  { value: "alimentacao", label: "Alimentação" },
-  { value: "gasolina", label: "Gasolina" },
-  { value: "casa", label: "Casa" },
-  { value: "lazer", label: "Lazer" },
-  { value: "outros", label: "Outros" },
-];

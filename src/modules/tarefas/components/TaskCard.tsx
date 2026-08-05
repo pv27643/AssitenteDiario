@@ -1,5 +1,6 @@
 import { useState, type DragEvent } from "react";
-import { AlertCircle, ChevronDown, ChevronUp, Pencil, Repeat, Trash2 } from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronUp, Pencil, Repeat } from "lucide-react";
+import ConfirmButton from "@/shared/components/ConfirmButton";
 import { TASK_PRIORITIES, TASK_RECURRENCE_OPTIONS, TASK_STATUSES } from "../types";
 import type { NewTaskInput, Tag, TaskStatus, TaskWithRelations } from "../types";
 import { formatDate, isOverdue } from "../utils";
@@ -77,14 +78,7 @@ export default function TaskCard({
           >
             <Pencil className="h-4 w-4" />
           </button>
-          <button
-            type="button"
-            onClick={() => onDelete(task.id)}
-            aria-label="Remover tarefa"
-            className="flex h-11 w-11 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-red-500"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          <ConfirmButton label="Remover tarefa" onConfirm={() => onDelete(task.id)} />
         </div>
       </div>
 

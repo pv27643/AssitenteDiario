@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
-import type { NewEventInput } from "../types";
+import { EVENT_RECURRENCE_UNIT_OPTIONS } from "../types";
+import type { EventRecurrenceUnit, NewEventInput } from "../types";
 
 interface EventFormProps {
   initialDate?: string;
@@ -16,6 +17,10 @@ export default function EventForm({ initialDate, onSubmit, onCancel }: EventForm
   const [eventDate, setEventDate] = useState(initialDate ?? "");
   const [eventTime, setEventTime] = useState("");
   const [category, setCategory] = useState("");
+  const [recurrenceUnit, setRecurrenceUnit] = useState<EventRecurrenceUnit>(null);
+  const [recurrenceInterval, setRecurrenceInterval] = useState("1");
+  const [notifyValue, setNotifyValue] = useState("");
+  const [notifyUnit, setNotifyUnit] = useState<"dias" | "horas">("dias");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -32,12 +37,20 @@ export default function EventForm({ initialDate, onSubmit, onCancel }: EventForm
       return;
     }
 
+    const parsedInterval = recurrenceUnit ? Number(recurrenceInterval) : null;
+    if (recurrenceUnit && (!Number.isInteger(parsedInterval) || (parsedInterval as number) < 1)) {
+      setError("O intervalo de recorrência tem de ser um número inteiro, no mínimo 1.");
+      return;
+    }
+
     setSubmitting(true);
     const { error: submitError } = await onSubmit({
       title: title.trim(),
       event_date: eventDate,
       event_time: eventTime || null,
       category: category.trim() || null,
+      recurrence_unit: recurrenceUnit,
+      recurrence_interval: parsedInterval,
     });
     setSubmitting(false);
 
@@ -49,6 +62,8 @@ export default function EventForm({ initialDate, onSubmit, onCancel }: EventForm
     setTitle("");
     setEventTime("");
     setCategory("");
+    setRecurrenceUnit(null);
+    setRecurrenceInterval("1");
   }
 
   return (
@@ -97,7 +112,7 @@ export default function EventForm({ initialDate, onSubmit, onCancel }: EventForm
           />
         </div>
 
-        <div className="sm:col-span-2">
+        <div>
           <label htmlFor="category" className={labelClass}>
             Categoria (opcional)
           </label>
@@ -109,6 +124,42 @@ export default function EventForm({ initialDate, onSubmit, onCancel }: EventForm
             onChange={(event) => setCategory(event.target.value)}
             className={inputClass}
           />
+        </div>
+
+        <div className="sm:col-span-2">
+          <label htmlFor="recurrenceUnit" className={labelClass}>
+            Recorrência
+          </label>
+          <div className="flex items-center gap-2">
+            {recurrenceUnit && (
+              <>
+                <span className="shrink-0 text-sm text-zinc-400">Cada</span>
+                <input
+                  type="number"
+                  min="1"
+                  value={recurrenceInterval}
+                  onChange={(event) => setRecurrenceInterval(event.target.value)}
+                  aria-label="Intervalo de recorrência"
+                  className={`${inputClass} w-20`}
+                />
+              </>
+            )}
+            <select
+              id="recurrenceUnit"
+              value={recurrenceUnit ?? ""}
+              onChange={(event) =>
+                setRecurrenceUnit(event.target.value === "" ? null : (event.target.value as EventRecurrenceUnit))
+              }
+              className={inputClass}
+            >
+              <option value="">Nenhuma</option>
+              {EVENT_RECURRENCE_UNIT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
