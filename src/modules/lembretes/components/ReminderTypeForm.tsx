@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
-import { REMINDER_COLOR_OPTIONS, REMINDER_UNIT_OPTIONS } from "../types";
-import type { NewReminderTypeInput } from "../types";
+import { REMINDER_COLOR_OPTIONS, REMINDER_INTERVAL_UNIT_OPTIONS } from "../types";
+import type { NewReminderTypeInput, ReminderIntervalUnit } from "../types";
+import { amountUnitToInterval } from "../utils";
 
 interface ReminderTypeFormProps {
   onSubmit: (input: NewReminderTypeInput) => Promise<{ error: string | null }>;
@@ -13,9 +14,9 @@ const labelClass = "mb-1 block text-sm font-medium text-zinc-300";
 
 export default function ReminderTypeForm({ onSubmit, onCancel }: ReminderTypeFormProps) {
   const [name, setName] = useState("");
-  const [unit, setUnit] = useState("vez");
   const [dailyGoal, setDailyGoal] = useState("");
-  const [intervalHours, setIntervalHours] = useState("");
+  const [intervalAmount, setIntervalAmount] = useState("");
+  const [intervalUnit, setIntervalUnit] = useState<ReminderIntervalUnit>("horas");
   const [color, setColor] = useState<string>(REMINDER_COLOR_OPTIONS[0]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -29,12 +30,18 @@ export default function ReminderTypeForm({ onSubmit, onCancel }: ReminderTypeFor
       return;
     }
 
+    const intervalHours = amountUnitToInterval(intervalAmount, intervalUnit);
+    if (intervalHours === null) {
+      setError("Define de quanto em quanto tempo queres ser lembrado.");
+      return;
+    }
+
     setSubmitting(true);
     const { error: submitError } = await onSubmit({
       name: name.trim(),
-      unit: unit.trim() || "vez",
+      unit: "vez",
       daily_goal: dailyGoal ? Number(dailyGoal) : null,
-      interval_hours: intervalHours ? Number(intervalHours) : null,
+      interval_hours: intervalHours,
       color,
     });
     setSubmitting(false);
@@ -45,9 +52,9 @@ export default function ReminderTypeForm({ onSubmit, onCancel }: ReminderTypeFor
     }
 
     setName("");
-    setUnit("vez");
     setDailyGoal("");
-    setIntervalHours("");
+    setIntervalAmount("");
+    setIntervalUnit("horas");
     setColor(REMINDER_COLOR_OPTIONS[0]);
   }
 
@@ -72,19 +79,6 @@ export default function ReminderTypeForm({ onSubmit, onCancel }: ReminderTypeFor
         </div>
 
         <div>
-          <label htmlFor="unit" className={labelClass}>
-            Unidade
-          </label>
-          <select id="unit" value={unit} onChange={(event) => setUnit(event.target.value)} className={inputClass}>
-            {REMINDER_UNIT_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
           <label htmlFor="dailyGoal" className={labelClass}>
             Meta diária (opcional)
           </label>
@@ -100,18 +94,33 @@ export default function ReminderTypeForm({ onSubmit, onCancel }: ReminderTypeFor
         </div>
 
         <div>
-          <label htmlFor="intervalHours" className={labelClass}>
-            Lembrar a cada (horas, opcional)
+          <label htmlFor="intervalAmount" className={labelClass}>
+            Lembrar a cada
           </label>
-          <input
-            id="intervalHours"
-            type="number"
-            min="1"
-            inputMode="numeric"
-            value={intervalHours}
-            onChange={(event) => setIntervalHours(event.target.value)}
-            className={inputClass}
-          />
+          <div className="flex gap-2">
+            <input
+              id="intervalAmount"
+              type="number"
+              min="1"
+              inputMode="numeric"
+              value={intervalAmount}
+              onChange={(event) => setIntervalAmount(event.target.value)}
+              className={inputClass}
+              required
+            />
+            <select
+              aria-label="Unidade do intervalo"
+              value={intervalUnit}
+              onChange={(event) => setIntervalUnit(event.target.value as ReminderIntervalUnit)}
+              className={inputClass}
+            >
+              {REMINDER_INTERVAL_UNIT_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div>

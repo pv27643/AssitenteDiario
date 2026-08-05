@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Eye, EyeOff, Pencil } from "lucide-react";
 import ConfirmButton from "@/shared/components/ConfirmButton";
-import { REMINDER_COLOR_OPTIONS, REMINDER_UNIT_OPTIONS } from "../types";
-import type { ReminderType, ReminderTypeUpdateInput } from "../types";
+import { REMINDER_COLOR_OPTIONS, REMINDER_INTERVAL_UNIT_OPTIONS } from "../types";
+import type { ReminderIntervalUnit, ReminderType, ReminderTypeUpdateInput } from "../types";
+import { amountUnitToInterval, formatInterval, intervalToAmountUnit } from "../utils";
 
 interface ReminderTypeRowProps {
   type: ReminderType;
@@ -17,16 +18,13 @@ const labelClass = "mb-1 block text-xs font-medium text-zinc-400";
 export default function ReminderTypeRow({ type, onUpdate, onDelete }: ReminderTypeRowProps) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(type.name);
-  const [unit, setUnit] = useState(type.unit);
   const [dailyGoal, setDailyGoal] = useState(type.daily_goal ? String(type.daily_goal) : "");
-  const [intervalHours, setIntervalHours] = useState(type.interval_hours ? String(type.interval_hours) : "");
+  const initialInterval = intervalToAmountUnit(type.interval_hours);
+  const [intervalAmount, setIntervalAmount] = useState(initialInterval.amount);
+  const [intervalUnit, setIntervalUnit] = useState<ReminderIntervalUnit>(initialInterval.unit);
   const [color, setColor] = useState(type.color);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const unitOptions = REMINDER_UNIT_OPTIONS.includes(type.unit as (typeof REMINDER_UNIT_OPTIONS)[number])
-    ? REMINDER_UNIT_OPTIONS
-    : [type.unit, ...REMINDER_UNIT_OPTIONS];
 
   async function handleSave() {
     if (!name.trim()) {
@@ -34,13 +32,18 @@ export default function ReminderTypeRow({ type, onUpdate, onDelete }: ReminderTy
       return;
     }
 
+    const intervalHours = amountUnitToInterval(intervalAmount, intervalUnit);
+    if (intervalHours === null) {
+      setError("Define de quanto em quanto tempo queres ser lembrado.");
+      return;
+    }
+
     setError(null);
     setSaving(true);
     const { error: saveError } = await onUpdate(type.id, {
       name: name.trim(),
-      unit: unit.trim() || "vez",
       daily_goal: dailyGoal ? Number(dailyGoal) : null,
-      interval_hours: intervalHours ? Number(intervalHours) : null,
+      interval_hours: intervalHours,
       color,
     });
     setSaving(false);
@@ -65,16 +68,6 @@ export default function ReminderTypeRow({ type, onUpdate, onDelete }: ReminderTy
             <input value={name} onChange={(event) => setName(event.target.value)} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>Unidade</label>
-            <select value={unit} onChange={(event) => setUnit(event.target.value)} className={inputClass}>
-              {unitOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
             <label className={labelClass}>Meta diária</label>
             <input
               type="number"
@@ -85,14 +78,28 @@ export default function ReminderTypeRow({ type, onUpdate, onDelete }: ReminderTy
             />
           </div>
           <div>
-            <label className={labelClass}>Intervalo (horas)</label>
-            <input
-              type="number"
-              min="1"
-              value={intervalHours}
-              onChange={(event) => setIntervalHours(event.target.value)}
-              className={inputClass}
-            />
+            <label className={labelClass}>Lembrar a cada</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min="1"
+                value={intervalAmount}
+                onChange={(event) => setIntervalAmount(event.target.value)}
+                className={inputClass}
+              />
+              <select
+                aria-label="Unidade do intervalo"
+                value={intervalUnit}
+                onChange={(event) => setIntervalUnit(event.target.value as ReminderIntervalUnit)}
+                className={inputClass}
+              >
+                {REMINDER_INTERVAL_UNIT_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <div>
             <label className={labelClass}>Cor</label>
@@ -145,9 +152,10 @@ export default function ReminderTypeRow({ type, onUpdate, onDelete }: ReminderTy
           )}
         </div>
         <p className="text-xs text-zinc-500">
-          {type.unit}
-          {type.daily_goal ? ` · meta ${type.daily_goal}/dia` : ""}
-          {type.interval_hours ? ` · a cada ${type.interval_hours}h` : ""}
+          {type.daily_goal ? `meta ${type.daily_goal}/dia` : ""}
+          {type.interval_hours !== null
+            ? `${type.daily_goal ? " · " : ""}a cada ${formatInterval(type.interval_hours)}`
+            : ""}
         </p>
       </div>
 

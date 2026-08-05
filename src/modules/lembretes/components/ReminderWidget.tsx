@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Flame, Minus, Plus } from "lucide-react";
 import { useReminderLogs } from "../hooks/useReminderLogs";
 import type { ReminderType, ReminderTypeUpdateInput } from "../types";
-import { computeDailyProgress } from "../utils";
+import { computeDailyProgress, formatInterval } from "../utils";
 
 interface ReminderWidgetProps {
   type: ReminderType;
@@ -65,7 +65,7 @@ export default function ReminderWidget({ type, onUpdateType }: ReminderWidgetPro
 
       {type.interval_hours !== null && (
         <div className="flex items-center justify-between text-xs text-zinc-500">
-          <span>Lembrar a cada {type.interval_hours}h</span>
+          <span>Lembrar a cada {formatInterval(type.interval_hours)}</span>
           <div className="flex items-center gap-1">
             <button
               type="button"
