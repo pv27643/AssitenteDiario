@@ -15,27 +15,58 @@ interface StopwatchTimerProps {
 
 type TimerProps = CountdownTimerProps | StopwatchTimerProps;
 
-/** Toca um beep curto e vibra (se o dispositivo suportar) para assinalar o fim do descanso. */
-function notifyEnd() {
-  if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate([200, 100, 200]);
-
+/** 3 beeps em sequência — mais parecido com um alarme do que um único toque. */
+function playAlarm() {
   try {
     const AudioCtx =
       window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return;
     const ctx = new AudioCtx();
-    const oscillator = ctx.createOscillator();
-    const gain = ctx.createGain();
-    oscillator.connect(gain);
-    gain.connect(ctx.destination);
-    oscillator.frequency.value = 880;
-    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-    oscillator.start();
-    oscillator.stop(ctx.currentTime + 0.4);
-    oscillator.onended = () => ctx.close();
+
+    [0, 0.3, 0.6].forEach((offset) => {
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.frequency.value = 880;
+      gain.gain.setValueAtTime(0.25, ctx.currentTime + offset);
+      oscillator.start(ctx.currentTime + offset);
+      oscillator.stop(ctx.currentTime + offset + 0.2);
+    });
+
+    window.setTimeout(() => ctx.close(), 1000);
   } catch {
-    // Web Audio indisponível — a vibração já dá o aviso.
+    // Web Audio indisponível — a vibração/notificação já avisam.
   }
+}
+
+/**
+ * Notificação do sistema quando o descanso acaba — a única forma real de
+ * avisar se saíres da aba/app (não há acesso a Ilha Dinâmica nem
+ * equivalente numa PWA, isto é o que o browser permite). Só dispara se a
+ * permissão já tiver sido concedida (ver "Ativar notificações") e se
+ * houver um service worker ativo; caso contrário fica só o beep/vibração.
+ */
+async function notifySystemEnd() {
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+
+  try {
+    const registration = await navigator.serviceWorker.getRegistration();
+    await registration?.showNotification("Descanso terminado", {
+      body: "Já podes continuar o treino.",
+      tag: "treino-descanso",
+    });
+  } catch {
+    // Sem service worker ativo — o beep/vibração já avisaram.
+  }
+}
+
+/** Toca o alarme, vibra (se o dispositivo suportar) e tenta notificar o sistema para assinalar o fim do descanso. */
+function notifyEnd() {
+  if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]);
+  playAlarm();
+  notifySystemEnd();
 }
 
 const primaryButtonClass =

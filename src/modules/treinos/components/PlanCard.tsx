@@ -32,7 +32,7 @@ export default function PlanCard({
   const [newName, setNewName] = useState("");
   const [newSets, setNewSets] = useState("3");
   const [newReps, setNewReps] = useState("10");
-  const [newRest, setNewRest] = useState("60");
+  const [newRest, setNewRest] = useState("180");
 
   function handleSaveName() {
     if (!name.trim()) return;
@@ -51,7 +51,7 @@ export default function PlanCard({
     setNewName("");
     setNewSets("3");
     setNewReps("10");
-    setNewRest("60");
+    setNewRest("180");
     setAddingExercise(false);
   }
 

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import ConfirmButton from "@/shared/components/ConfirmButton";
-import { formatDurationMinutes, formatSessionDate, groupSessionsByPeriod } from "../utils";
+import { formatDurationMinutes, formatSessionDate, formatSets, groupSessionsByPeriod } from "../utils";
 import type { SessionWithExercises } from "../types";
 
 interface HistoryTabProps {
@@ -62,11 +62,7 @@ export default function HistoryTab({ sessions, loading, deleteSession }: History
                       {session.exercises.map((exercise) => (
                         <li key={exercise.id}>
                           {exercise.name}
-                          {exercise.sets !== null || exercise.reps !== null || exercise.weight !== null
-                            ? ` — ${exercise.sets ?? "?"}×${exercise.reps ?? "?"}${
-                                exercise.weight !== null ? ` @ ${exercise.weight}kg` : ""
-                              }`
-                            : ""}
+                          {exercise.sets.length > 0 ? ` — ${formatSets(exercise.sets)}` : ""}
                         </li>
                       ))}
                     </ul>

@@ -1,4 +1,4 @@
-import type { Goal, SessionWithExercises } from "./types";
+import type { Goal, SessionSet, SessionWithExercises } from "./types";
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -26,6 +26,15 @@ export function formatDurationMinutes(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}min`;
+}
+
+/** "20×15kg, 10×20kg, ..." — resumo das séries feitas, para o histórico. */
+export function formatSets(sets: SessionSet[]): string {
+  return sets
+    .slice()
+    .sort((a, b) => a.set_number - b.set_number)
+    .map((set) => `${set.reps ?? "?"}×${set.weight !== null ? `${set.weight}kg` : "?"}`)
+    .join(", ");
 }
 
 export function formatSessionDate(isoDateTime: string): string {

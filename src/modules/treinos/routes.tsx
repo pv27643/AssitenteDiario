@@ -54,8 +54,10 @@ export default function TreinosPage() {
           error={sessions.error}
           startSession={sessions.startSession}
           addSessionExercise={sessions.addSessionExercise}
-          updateSessionExercise={sessions.updateSessionExercise}
           deleteSessionExercise={sessions.deleteSessionExercise}
+          addSessionSet={sessions.addSessionSet}
+          updateSessionSet={sessions.updateSessionSet}
+          deleteSessionSet={sessions.deleteSessionSet}
           finishSession={sessions.finishSession}
         />
       )}

@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/shared/lib/supabase";
 import { useAuth } from "@/shared/context/AuthContext";
-import type { PlanWithExercises, SessionExercise, SessionExerciseUpdateInput, SessionWithExercises } from "../types";
+import type {
+  PlanWithExercises,
+  SessionExerciseUpdateInput,
+  SessionExerciseWithSets,
+  SessionSet,
+  SessionSetInput,
+  SessionWithExercises,
+} from "../types";
 
 interface MutationResult {
   error: string | null;
@@ -25,12 +32,15 @@ interface UseWorkoutSessionsResult {
   addSessionExercise: (sessionId: string, input: NewSessionExerciseInput) => Promise<MutationResult>;
   updateSessionExercise: (id: string, input: SessionExerciseUpdateInput) => Promise<MutationResult>;
   deleteSessionExercise: (id: string) => Promise<MutationResult>;
+  addSessionSet: (sessionExerciseId: string, input: SessionSetInput) => Promise<MutationResult>;
+  updateSessionSet: (id: string, input: SessionSetInput) => Promise<MutationResult>;
+  deleteSessionSet: (id: string) => Promise<MutationResult>;
   finishSession: (id: string, durationMinutes: number) => Promise<MutationResult>;
   deleteSession: (id: string) => Promise<MutationResult>;
 }
 
 interface RawSessionRow extends SessionWithExercises {
-  session_exercises: SessionExercise[] | null;
+  session_exercises: (SessionExerciseWithSets & { session_sets: SessionSet[] | null })[] | null;
   workout_plans: { name: string } | null;
 }
 
@@ -39,7 +49,13 @@ function toSessionWithExercises(row: RawSessionRow): SessionWithExercises {
   return {
     ...session,
     plan_name: workout_plans?.name ?? null,
-    exercises: (session_exercises ?? []).slice().sort((a, b) => a.position - b.position),
+    exercises: (session_exercises ?? [])
+      .slice()
+      .sort((a, b) => a.position - b.position)
+      .map((exercise) => {
+        const { session_sets, ...rest } = exercise;
+        return { ...rest, sets: (session_sets ?? []).slice().sort((a, b) => a.set_number - b.set_number) };
+      }),
   };
 }
 
@@ -62,7 +78,7 @@ export function useWorkoutSessions(): UseWorkoutSessionsResult {
 
     const { data, error: fetchError } = await supabase
       .from("workout_sessions")
-      .select("*, workout_plans(name), session_exercises(*)")
+      .select("*, workout_plans(name), session_exercises(*, session_sets(*))")
       .order("started_at", { ascending: false });
 
     if (fetchError) {
@@ -91,20 +107,39 @@ export function useWorkoutSessions(): UseWorkoutSessionsResult {
       return { id: null, error: "Não foi possível começar a sessão." };
     }
 
-    if (plan && plan.exercises.length > 0) {
-      const { error: exercisesError } = await supabase.from("session_exercises").insert(
-        plan.exercises.map((exercise, index) => ({
-          session_id: data.id,
-          name: exercise.name,
-          position: index,
-          sets: exercise.sets,
-          reps: exercise.reps,
-          rest_seconds: exercise.rest_seconds,
-        })),
-      );
-      if (exercisesError) {
-        await load();
-        return { id: data.id, error: "Sessão criada, mas não foi possível pré-preencher os exercícios." };
+    if (plan) {
+      for (let index = 0; index < plan.exercises.length; index++) {
+        const planExercise = plan.exercises[index];
+        const { data: exerciseData, error: exerciseError } = await supabase
+          .from("session_exercises")
+          .insert({
+            session_id: data.id,
+            name: planExercise.name,
+            position: index,
+            rest_seconds: planExercise.rest_seconds,
+          })
+          .select("id")
+          .single();
+
+        if (exerciseError || !exerciseData) {
+          await load();
+          return { id: data.id, error: "Sessão criada, mas não foi possível pré-preencher os exercícios." };
+        }
+
+        if (planExercise.sets > 0) {
+          const { error: setsError } = await supabase.from("session_sets").insert(
+            Array.from({ length: planExercise.sets }, (_, setIndex) => ({
+              session_exercise_id: exerciseData.id,
+              set_number: setIndex + 1,
+              reps: planExercise.reps,
+              weight: null,
+            })),
+          );
+          if (setsError) {
+            await load();
+            return { id: data.id, error: "Sessão criada, mas não foi possível pré-preencher as séries." };
+          }
+        }
       }
     }
 
@@ -141,6 +176,41 @@ export function useWorkoutSessions(): UseWorkoutSessionsResult {
     return { error: null };
   }
 
+  async function addSessionSet(sessionExerciseId: string, input: SessionSetInput): Promise<MutationResult> {
+    let nextSetNumber = 1;
+    for (const session of sessions) {
+      const exercise = session.exercises.find((entry) => entry.id === sessionExerciseId);
+      if (exercise) {
+        nextSetNumber = exercise.sets.length + 1;
+        break;
+      }
+    }
+
+    const { error: insertError } = await supabase.from("session_sets").insert({
+      session_exercise_id: sessionExerciseId,
+      set_number: nextSetNumber,
+      reps: input.reps ?? null,
+      weight: input.weight ?? null,
+    });
+    if (insertError) return { error: "Não foi possível adicionar a série." };
+    await load();
+    return { error: null };
+  }
+
+  async function updateSessionSet(id: string, input: SessionSetInput): Promise<MutationResult> {
+    const { error: updateError } = await supabase.from("session_sets").update(input).eq("id", id);
+    if (updateError) return { error: "Não foi possível atualizar a série." };
+    await load();
+    return { error: null };
+  }
+
+  async function deleteSessionSet(id: string): Promise<MutationResult> {
+    const { error: deleteError } = await supabase.from("session_sets").delete().eq("id", id);
+    if (deleteError) return { error: "Não foi possível remover a série." };
+    await load();
+    return { error: null };
+  }
+
   async function finishSession(id: string, durationMinutes: number): Promise<MutationResult> {
     const { error: updateError } = await supabase
       .from("workout_sessions")
@@ -166,6 +236,9 @@ export function useWorkoutSessions(): UseWorkoutSessionsResult {
     addSessionExercise,
     updateSessionExercise,
     deleteSessionExercise,
+    addSessionSet,
+    updateSessionSet,
+    deleteSessionSet,
     finishSession,
     deleteSession,
   };

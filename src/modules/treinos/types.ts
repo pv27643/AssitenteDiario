@@ -43,24 +43,37 @@ export interface SessionExercise {
   session_id: string;
   name: string;
   position: number;
-  sets: number | null;
-  reps: number | null;
-  weight: number | null;
   rest_seconds: number;
   created_at: string;
 }
 
+/** Uma série realmente feita — reps e carga podem mudar de série para série. */
+export interface SessionSet {
+  id: string;
+  session_exercise_id: string;
+  set_number: number;
+  reps: number | null;
+  weight: number | null;
+  created_at: string;
+}
+
+export interface SessionExerciseWithSets extends SessionExercise {
+  sets: SessionSet[];
+}
+
 export interface SessionWithExercises extends WorkoutSession {
   plan_name: string | null;
-  exercises: SessionExercise[];
+  exercises: SessionExerciseWithSets[];
 }
 
 export type SessionExerciseUpdateInput = Partial<{
   name: string;
-  sets: number | null;
+  rest_seconds: number;
+}>;
+
+export type SessionSetInput = Partial<{
   reps: number | null;
   weight: number | null;
-  rest_seconds: number;
 }>;
 
 export type GoalStatus = "ativa" | "concluida" | "cancelada";

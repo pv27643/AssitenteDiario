@@ -18,6 +18,7 @@ declare
   v_session1 uuid;
   v_session2 uuid;
   v_session3 uuid;
+  v_ex uuid;
 begin
   select id into v_user_id from profiles where username = 'ivan';
   if v_user_id is null then
@@ -127,29 +128,52 @@ begin
     (v_plan_b, 'Puxada alta', 3, 10, 60, 1),
     (v_plan_b, 'Rosca direta', 3, 12, 45, 2);
 
-  -- Sessões já feitas (histórico), com o que foi realmente feito
+  -- Sessões já feitas (histórico), com cada série registada à parte
+  -- (peso e reps podem mudar de série para série)
   insert into workout_sessions (user_id, plan_id, started_at, duration_minutes)
     values (v_user_id, v_plan_a, (current_date - 5) + time '18:00', 52)
     returning id into v_session1;
-  insert into session_exercises (session_id, name, position, sets, reps, weight, rest_seconds) values
-    (v_session1, 'Supino reto', 0, 4, 8, 60, 90),
-    (v_session1, 'Fundos', 1, 3, 12, null, 60),
-    (v_session1, 'Extensão de tríceps', 2, 3, 12, 15, 45);
+
+  insert into session_exercises (session_id, name, position, rest_seconds)
+    values (v_session1, 'Supino reto', 0, 90) returning id into v_ex;
+  insert into session_sets (session_exercise_id, set_number, reps, weight) values
+    (v_ex, 1, 20, 15), (v_ex, 2, 10, 20), (v_ex, 3, 8, 20), (v_ex, 4, 8, 20);
+
+  insert into session_exercises (session_id, name, position, rest_seconds)
+    values (v_session1, 'Fundos', 1, 60) returning id into v_ex;
+  insert into session_sets (session_exercise_id, set_number, reps, weight) values
+    (v_ex, 1, 12, null), (v_ex, 2, 11, null), (v_ex, 3, 10, null);
+
+  insert into session_exercises (session_id, name, position, rest_seconds)
+    values (v_session1, 'Extensão de tríceps', 2, 45) returning id into v_ex;
+  insert into session_sets (session_exercise_id, set_number, reps, weight) values
+    (v_ex, 1, 12, 15), (v_ex, 2, 12, 15), (v_ex, 3, 10, 15);
 
   insert into workout_sessions (user_id, plan_id, started_at, duration_minutes)
     values (v_user_id, v_plan_b, (current_date - 3) + time '19:00', 48)
     returning id into v_session2;
-  insert into session_exercises (session_id, name, position, sets, reps, weight, rest_seconds) values
-    (v_session2, 'Remada curvada', 0, 4, 8, 50, 90),
-    (v_session2, 'Puxada alta', 1, 3, 10, 45, 60),
-    (v_session2, 'Rosca direta', 2, 3, 12, 12, 45);
 
-  -- Sessão livre (sem plano), ex: corrida
+  insert into session_exercises (session_id, name, position, rest_seconds)
+    values (v_session2, 'Remada curvada', 0, 90) returning id into v_ex;
+  insert into session_sets (session_exercise_id, set_number, reps, weight) values
+    (v_ex, 1, 8, 50), (v_ex, 2, 8, 50), (v_ex, 3, 7, 50), (v_ex, 4, 6, 50);
+
+  insert into session_exercises (session_id, name, position, rest_seconds)
+    values (v_session2, 'Puxada alta', 1, 60) returning id into v_ex;
+  insert into session_sets (session_exercise_id, set_number, reps, weight) values
+    (v_ex, 1, 10, 45), (v_ex, 2, 10, 45), (v_ex, 3, 9, 45);
+
+  insert into session_exercises (session_id, name, position, rest_seconds)
+    values (v_session2, 'Rosca direta', 2, 45) returning id into v_ex;
+  insert into session_sets (session_exercise_id, set_number, reps, weight) values
+    (v_ex, 1, 12, 12), (v_ex, 2, 12, 12), (v_ex, 3, 10, 12);
+
+  -- Sessão livre (sem plano), ex: corrida — sem séries
   insert into workout_sessions (user_id, plan_id, started_at, duration_minutes)
     values (v_user_id, null, (current_date - 1) + time '07:30', 30)
     returning id into v_session3;
   insert into session_exercises (session_id, name, position, rest_seconds) values
-    (v_session3, 'Corrida', 0, 60);
+    (v_session3, 'Corrida', 0, 180);
 
   -- Metas: uma perto do prazo (mostra o destaque a vermelho), uma a meio e uma já concluída
   insert into goals (user_id, title, target_value, current_value, unit, deadline, status) values

@@ -134,7 +134,7 @@ create table plan_exercises (
   name text not null,
   sets int not null,
   reps int not null,
-  rest_seconds int not null default 60,
+  rest_seconds int not null default 180,
   position int not null default 0
 );
 
@@ -148,17 +148,23 @@ create table workout_sessions (
 );
 
 -- exercícios de uma sessão concreta — nome copiado do plano na altura
--- (não muda se o plano for editado depois); sets/reps/weight são o que
--- foi realmente feito, não a meta do plano
+-- (não muda se o plano for editado depois)
 create table session_exercises (
   id uuid primary key default gen_random_uuid(),
   session_id uuid references workout_sessions(id) on delete cascade not null,
   name text not null,
   position int not null default 0,
-  sets int,
+  rest_seconds int not null default 180
+);
+
+-- cada série realmente feita de um exercício da sessão — reps e carga
+-- podem mudar de série para série (ex: 1ª série 15kg×20, 2ª já a 20kg×10)
+create table session_sets (
+  id uuid primary key default gen_random_uuid(),
+  session_exercise_id uuid references session_exercises(id) on delete cascade not null,
+  set_number int not null,
   reps int,
-  weight numeric,
-  rest_seconds int not null default 60
+  weight numeric
 );
 
 -- metas (ex: correr 10km, supino 80kg)
@@ -220,8 +226,8 @@ Cada lembrete ativo aparece também como widget automático no Dashboard — nã
 
 **Treinos**
 - Planos de treino: nome + lista ordenada de exercícios (nome, séries, repetições, segundos de descanso), com interface para reordenar
-- Sessão: a partir de um plano existente (pré-preenche os exercícios) ou livre (adiciona exercícios à mão); regista séries, repetições e carga realmente feitas por exercício
-- Temporizador reutilizável com dois modos: descanso entre séries (contagem decrescente editável, com som/vibração no fim, saltar ou +15s) e cronómetro da sessão (iniciar/pausar/parar, grava a duração no fim)
+- Sessão: a partir de um plano existente (pré-preenche os exercícios) ou livre (adiciona exercícios à mão); regista cada série à parte, com reps e carga próprias (podem mudar de série para série)
+- Temporizador reutilizável com dois modos: descanso entre séries (contagem decrescente editável, predefinido a 3 min, com alarme sonoro/vibração/notificação no fim, saltar ou +15s) e cronómetro da sessão (iniciar/pausar/parar, grava a duração no fim)
 - Histórico de sessões agrupado por semana ou por mês
 - Metas: título, valor-alvo, valor atual, unidade, prazo opcional e estado, com barra de progresso e atualização rápida do valor atual
 

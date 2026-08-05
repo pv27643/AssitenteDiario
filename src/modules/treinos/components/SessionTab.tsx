@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import SessionExerciseRow from "./SessionExerciseRow";
 import Timer from "./Timer";
-import type { PlanWithExercises, SessionExerciseUpdateInput, SessionWithExercises } from "../types";
+import type { PlanWithExercises, SessionSetInput, SessionWithExercises } from "../types";
+
+const DEFAULT_REST_SECONDS = 180;
 
 interface SessionTabProps {
   plans: PlanWithExercises[];
@@ -14,8 +16,10 @@ interface SessionTabProps {
     sessionId: string,
     input: { name: string; rest_seconds: number },
   ) => Promise<{ error: string | null }>;
-  updateSessionExercise: (id: string, input: SessionExerciseUpdateInput) => Promise<{ error: string | null }>;
   deleteSessionExercise: (id: string) => Promise<{ error: string | null }>;
+  addSessionSet: (sessionExerciseId: string, input: SessionSetInput) => Promise<{ error: string | null }>;
+  updateSessionSet: (id: string, input: SessionSetInput) => Promise<{ error: string | null }>;
+  deleteSessionSet: (id: string) => Promise<{ error: string | null }>;
   finishSession: (id: string, durationMinutes: number) => Promise<{ error: string | null }>;
 }
 
@@ -29,8 +33,10 @@ export default function SessionTab({
   error,
   startSession,
   addSessionExercise,
-  updateSessionExercise,
   deleteSessionExercise,
+  addSessionSet,
+  updateSessionSet,
+  deleteSessionSet,
   finishSession,
 }: SessionTabProps) {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -58,7 +64,7 @@ export default function SessionTab({
     if (!activeSessionId || !newExerciseName.trim()) return;
     const { error: addError } = await addSessionExercise(activeSessionId, {
       name: newExerciseName.trim(),
-      rest_seconds: 60,
+      rest_seconds: DEFAULT_REST_SECONDS,
     });
     if (addError) setActionError(addError);
     else setNewExerciseName("");
@@ -134,8 +140,10 @@ export default function SessionTab({
             exercise={exercise}
             isResting={restExerciseId === exercise.id}
             onToggleRest={() => setRestExerciseId((prev) => (prev === exercise.id ? null : exercise.id))}
-            onUpdate={(input) => updateSessionExercise(exercise.id, input)}
-            onDelete={() => deleteSessionExercise(exercise.id)}
+            onAddSet={(input) => addSessionSet(exercise.id, input)}
+            onUpdateSet={(id, input) => updateSessionSet(id, input)}
+            onDeleteSet={(id) => deleteSessionSet(id)}
+            onDeleteExercise={() => deleteSessionExercise(exercise.id)}
           />
         ))}
       </div>
