@@ -13,6 +13,11 @@ declare
   v_task5 uuid;
   v_reminder_agua uuid;
   v_reminder_exercicio uuid;
+  v_plan_a uuid;
+  v_plan_b uuid;
+  v_session1 uuid;
+  v_session2 uuid;
+  v_session3 uuid;
 begin
   select id into v_user_id from profiles where username = 'ivan';
   if v_user_id is null then
@@ -109,6 +114,49 @@ begin
   insert into reminder_logs (reminder_type_id, user_id, logged_at) values
     (v_reminder_exercicio, v_user_id, (current_date - 1) + time '18:00');
 
+  -- Treinos: planos com exercícios ordenados
+  insert into workout_plans (user_id, name) values (v_user_id, 'Treino A – Peito/Tríceps') returning id into v_plan_a;
+  insert into plan_exercises (plan_id, name, sets, reps, rest_seconds, position) values
+    (v_plan_a, 'Supino reto', 4, 8, 90, 0),
+    (v_plan_a, 'Fundos', 3, 12, 60, 1),
+    (v_plan_a, 'Extensão de tríceps', 3, 12, 45, 2);
+
+  insert into workout_plans (user_id, name) values (v_user_id, 'Treino B – Costas/Bíceps') returning id into v_plan_b;
+  insert into plan_exercises (plan_id, name, sets, reps, rest_seconds, position) values
+    (v_plan_b, 'Remada curvada', 4, 8, 90, 0),
+    (v_plan_b, 'Puxada alta', 3, 10, 60, 1),
+    (v_plan_b, 'Rosca direta', 3, 12, 45, 2);
+
+  -- Sessões já feitas (histórico), com o que foi realmente feito
+  insert into workout_sessions (user_id, plan_id, started_at, duration_minutes)
+    values (v_user_id, v_plan_a, (current_date - 5) + time '18:00', 52)
+    returning id into v_session1;
+  insert into session_exercises (session_id, name, position, sets, reps, weight, rest_seconds) values
+    (v_session1, 'Supino reto', 0, 4, 8, 60, 90),
+    (v_session1, 'Fundos', 1, 3, 12, null, 60),
+    (v_session1, 'Extensão de tríceps', 2, 3, 12, 15, 45);
+
+  insert into workout_sessions (user_id, plan_id, started_at, duration_minutes)
+    values (v_user_id, v_plan_b, (current_date - 3) + time '19:00', 48)
+    returning id into v_session2;
+  insert into session_exercises (session_id, name, position, sets, reps, weight, rest_seconds) values
+    (v_session2, 'Remada curvada', 0, 4, 8, 50, 90),
+    (v_session2, 'Puxada alta', 1, 3, 10, 45, 60),
+    (v_session2, 'Rosca direta', 2, 3, 12, 12, 45);
+
+  -- Sessão livre (sem plano), ex: corrida
+  insert into workout_sessions (user_id, plan_id, started_at, duration_minutes)
+    values (v_user_id, null, (current_date - 1) + time '07:30', 30)
+    returning id into v_session3;
+  insert into session_exercises (session_id, name, position, rest_seconds) values
+    (v_session3, 'Corrida', 0, 60);
+
+  -- Metas: uma perto do prazo (mostra o destaque a vermelho), uma a meio e uma já concluída
+  insert into goals (user_id, title, target_value, current_value, unit, deadline, status) values
+    (v_user_id, 'Supino 100kg', 100, 85, 'kg', current_date + 2, 'ativa'),
+    (v_user_id, 'Correr 10km sem parar', 10, 6, 'km', current_date + 30, 'ativa'),
+    (v_user_id, '50 flexões seguidas', 50, 50, 'reps', current_date - 10, 'concluida');
+
 end $$;
 
 -- Para limpar tudo isto depois, corre (substitui pelo teu username se for diferente):
@@ -117,6 +165,9 @@ end $$;
 -- declare v_user_id uuid;
 -- begin
 --   select id into v_user_id from profiles where username = 'ivan';
+--   delete from goals where user_id = v_user_id;
+--   delete from workout_sessions where user_id = v_user_id; -- arrasta session_exercises por cascade
+--   delete from workout_plans where user_id = v_user_id; -- arrasta plan_exercises por cascade
 --   delete from reminder_logs where user_id = v_user_id;
 --   delete from reminder_types where user_id = v_user_id;
 --   delete from events where user_id = v_user_id;
