@@ -43,6 +43,17 @@ export default function EventForm({ initialDate, onSubmit, onCancel }: EventForm
       return;
     }
 
+    const parsedNotifyValue = notifyValue ? Number(notifyValue) : null;
+    if (notifyValue && (!Number.isInteger(parsedNotifyValue) || (parsedNotifyValue as number) < 1)) {
+      setError("O valor de notificação tem de ser um número inteiro, no mínimo 1.");
+      return;
+    }
+    const notifyLeadHours = parsedNotifyValue
+      ? notifyUnit === "dias"
+        ? parsedNotifyValue * 24
+        : parsedNotifyValue
+      : null;
+
     setSubmitting(true);
     const { error: submitError } = await onSubmit({
       title: title.trim(),
@@ -51,6 +62,7 @@ export default function EventForm({ initialDate, onSubmit, onCancel }: EventForm
       category: category.trim() || null,
       recurrence_unit: recurrenceUnit,
       recurrence_interval: parsedInterval,
+      notify_lead_hours: notifyLeadHours,
     });
     setSubmitting(false);
 
@@ -64,6 +76,8 @@ export default function EventForm({ initialDate, onSubmit, onCancel }: EventForm
     setCategory("");
     setRecurrenceUnit(null);
     setRecurrenceInterval("1");
+    setNotifyValue("");
+    setNotifyUnit("dias");
   }
 
   return (
@@ -160,6 +174,34 @@ export default function EventForm({ initialDate, onSubmit, onCancel }: EventForm
               ))}
             </select>
           </div>
+        </div>
+
+        <div className="sm:col-span-2">
+          <label htmlFor="notifyValue" className={labelClass}>
+            Notificar-me antes (opcional)
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              id="notifyValue"
+              type="number"
+              min="1"
+              placeholder="Ex: 3"
+              value={notifyValue}
+              onChange={(event) => setNotifyValue(event.target.value)}
+              className={`${inputClass} w-24`}
+            />
+            <select
+              value={notifyUnit}
+              onChange={(event) => setNotifyUnit(event.target.value as "dias" | "horas")}
+              className={inputClass}
+            >
+              <option value="dias">dias antes</option>
+              <option value="horas">horas antes</option>
+            </select>
+          </div>
+          <p className="mt-1 text-xs text-zinc-500">
+            Recebes um aviso uma vez por dia a partir desse momento, até ao evento.
+          </p>
         </div>
       </div>
 
