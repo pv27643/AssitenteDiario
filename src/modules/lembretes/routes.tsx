@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Bell, BellOff } from "lucide-react";
+import { usePushNotifications } from "@/shared/hooks/usePushNotifications";
 import { useReminderTypes } from "./hooks/useReminderTypes";
 import ReminderTypeForm from "./components/ReminderTypeForm";
 import ReminderTypeRow from "./components/ReminderTypeRow";
@@ -6,6 +8,13 @@ import ReminderTypeRow from "./components/ReminderTypeRow";
 export default function LembretesPage() {
   const { reminderTypes, loading, error, createReminderType, updateReminderType, deleteReminderType } =
     useReminderTypes();
+  const {
+    supported: pushSupported,
+    subscribed: pushSubscribed,
+    error: pushError,
+    subscribe: subscribeToPush,
+    unsubscribe: unsubscribeFromPush,
+  } = usePushNotifications();
   const [showForm, setShowForm] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -17,6 +26,27 @@ export default function LembretesPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold text-white">Lembretes</h1>
+
+      {pushSupported && (
+        <button
+          type="button"
+          onClick={() => (pushSubscribed ? unsubscribeFromPush() : subscribeToPush())}
+          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-zinc-700 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
+        >
+          {pushSubscribed ? (
+            <>
+              <BellOff className="h-4 w-4" />
+              Desativar notificações
+            </>
+          ) : (
+            <>
+              <Bell className="h-4 w-4" />
+              Ativar notificações
+            </>
+          )}
+        </button>
+      )}
+      {pushError && <p className="text-sm text-red-500">{pushError}</p>}
 
       <button
         type="button"
