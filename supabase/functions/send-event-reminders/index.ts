@@ -16,6 +16,11 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY")!;
 const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY")!;
 
+// Caminho base onde a app está publicada (tem de bater certo com o
+// "base" do vite.config.ts). Ex: "/AssitenteDiario" no GitHub Pages
+// atual; muda para "" se um dia passares a servir a partir da raiz.
+const APP_BASE_PATH = Deno.env.get("APP_BASE_PATH") ?? "/AssitenteDiario";
+
 webpush.setVapidDetails("mailto:noreply@assistentediario.app", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
@@ -131,7 +136,7 @@ Deno.serve(async () => {
     const body =
       daysUntil <= 0 ? `${event.title} é hoje.` : `${event.title} é daqui a ${daysUntil} dia${daysUntil === 1 ? "" : "s"}.`;
 
-    const payload = JSON.stringify({ title: "Assistente Diário", body, url: "/calendario" });
+    const payload = JSON.stringify({ title: "Assistente Diário", body, url: `${APP_BASE_PATH}/calendario` });
 
     for (const subscription of subscriptions) {
       try {

@@ -11,6 +11,11 @@ interface UsePushNotificationsResult {
   unsubscribe: () => Promise<void>;
 }
 
+// O service worker fica em public/sw.js, servido a partir da raiz do
+// deploy (que pode ser um subcaminho, ex: GitHub Pages) — BASE_URL já
+// vem com "/" no fim.
+const SW_URL = `${import.meta.env.BASE_URL}sw.js`;
+
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -37,7 +42,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
     }
 
     navigator.serviceWorker
-      .register("/sw.js")
+      .register(SW_URL)
       .then((registration) => registration.pushManager.getSubscription())
       .then((subscription) => setSubscribed(subscription !== null))
       .catch(() => setSubscribed(false))
@@ -55,7 +60,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
         return;
       }
 
-      const registration = await navigator.serviceWorker.register("/sw.js");
+      const registration = await navigator.serviceWorker.register(SW_URL);
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY) as BufferSource,
@@ -88,7 +93,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
     setError(null);
 
     try {
-      const registration = await navigator.serviceWorker.register("/sw.js");
+      const registration = await navigator.serviceWorker.register(SW_URL);
       const subscription = await registration.pushManager.getSubscription();
 
       if (subscription) {

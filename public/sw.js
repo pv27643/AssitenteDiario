@@ -9,6 +9,11 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// Caminho base do deploy (ex: "/AssitenteDiario/" no GitHub Pages, "/" em
+// localhost/domínio próprio) — tirado do scope do próprio SW, para não
+// ficar hardcoded e partir se o local de deploy mudar.
+const BASE_PATH = new URL(self.registration.scope).pathname;
+
 self.addEventListener("push", (event) => {
   let payload = { title: "Assistente Diário", body: "Tens um lembrete." };
   try {
@@ -20,16 +25,17 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
-      icon: "/icon.svg",
-      badge: "/icon.svg",
-      data: { url: payload.url || "/calendario" },
+      icon: `${BASE_PATH}icon.svg`,
+      badge: `${BASE_PATH}icon.svg`,
+      data: { url: payload.url || `${BASE_PATH}calendario` },
     }),
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data && event.notification.data.url ? event.notification.data.url : "/";
+  const targetUrl =
+    event.notification.data && event.notification.data.url ? event.notification.data.url : BASE_PATH;
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
