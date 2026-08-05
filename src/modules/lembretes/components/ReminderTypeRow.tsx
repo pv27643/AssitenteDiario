@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff, Pencil } from "lucide-react";
 import ConfirmButton from "@/shared/components/ConfirmButton";
-import { REMINDER_COLOR_OPTIONS, REMINDER_INTERVAL_UNIT_OPTIONS } from "../types";
+import { REMINDER_INTERVAL_UNIT_OPTIONS } from "../types";
 import type { ReminderIntervalUnit, ReminderType, ReminderTypeUpdateInput } from "../types";
 import { amountUnitToInterval, formatInterval, intervalToAmountUnit } from "../utils";
 
@@ -22,7 +22,6 @@ export default function ReminderTypeRow({ type, onUpdate, onDelete }: ReminderTy
   const initialInterval = intervalToAmountUnit(type.interval_hours);
   const [intervalAmount, setIntervalAmount] = useState(initialInterval.amount);
   const [intervalUnit, setIntervalUnit] = useState<ReminderIntervalUnit>(initialInterval.unit);
-  const [color, setColor] = useState(type.color);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +43,6 @@ export default function ReminderTypeRow({ type, onUpdate, onDelete }: ReminderTy
       name: name.trim(),
       daily_goal: dailyGoal ? Number(dailyGoal) : null,
       interval_hours: intervalHours,
-      color,
     });
     setSaving(false);
 
@@ -100,16 +98,6 @@ export default function ReminderTypeRow({ type, onUpdate, onDelete }: ReminderTy
                 ))}
               </select>
             </div>
-          </div>
-          <div>
-            <label className={labelClass}>Cor</label>
-            <select value={color} onChange={(event) => setColor(event.target.value)} className={inputClass}>
-              {REMINDER_COLOR_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
 

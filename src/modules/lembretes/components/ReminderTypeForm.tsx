@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { REMINDER_COLOR_OPTIONS, REMINDER_INTERVAL_UNIT_OPTIONS } from "../types";
+import { REMINDER_INTERVAL_UNIT_OPTIONS } from "../types";
 import type { NewReminderTypeInput, ReminderIntervalUnit } from "../types";
 import { amountUnitToInterval } from "../utils";
 
@@ -17,7 +17,6 @@ export default function ReminderTypeForm({ onSubmit, onCancel }: ReminderTypeFor
   const [dailyGoal, setDailyGoal] = useState("");
   const [intervalAmount, setIntervalAmount] = useState("");
   const [intervalUnit, setIntervalUnit] = useState<ReminderIntervalUnit>("horas");
-  const [color, setColor] = useState<string>(REMINDER_COLOR_OPTIONS[0]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -42,7 +41,7 @@ export default function ReminderTypeForm({ onSubmit, onCancel }: ReminderTypeFor
       unit: "vez",
       daily_goal: dailyGoal ? Number(dailyGoal) : null,
       interval_hours: intervalHours,
-      color,
+      color: "teal",
     });
     setSubmitting(false);
 
@@ -55,7 +54,6 @@ export default function ReminderTypeForm({ onSubmit, onCancel }: ReminderTypeFor
     setDailyGoal("");
     setIntervalAmount("");
     setIntervalUnit("horas");
-    setColor(REMINDER_COLOR_OPTIONS[0]);
   }
 
   return (
@@ -121,19 +119,6 @@ export default function ReminderTypeForm({ onSubmit, onCancel }: ReminderTypeFor
               ))}
             </select>
           </div>
-        </div>
-
-        <div>
-          <label htmlFor="color" className={labelClass}>
-            Cor (guardada para uso futuro)
-          </label>
-          <select id="color" value={color} onChange={(event) => setColor(event.target.value)} className={inputClass}>
-            {REMINDER_COLOR_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
 
