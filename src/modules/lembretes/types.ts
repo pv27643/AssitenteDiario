@@ -31,3 +31,16 @@ export interface ReminderLog {
 // Guardada por tipo (secção 3), mas não é usada para decorar o widget —
 // a paleta do site fica mono (zinc/vermelho), ver secção 9.
 export const REMINDER_COLOR_OPTIONS = ["teal", "blue", "green", "purple", "orange", "pink", "yellow"] as const;
+
+export const REMINDER_UNIT_OPTIONS = [
+  "vez",
+  "copo",
+  "comprimido",
+  "cápsula",
+  "litro",
+  "minuto",
+  "quilómetro",
+  "passo",
+  "página",
+  "cigarro",
+] as const;

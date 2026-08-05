@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff, Pencil } from "lucide-react";
 import ConfirmButton from "@/shared/components/ConfirmButton";
-import { REMINDER_COLOR_OPTIONS } from "../types";
+import { REMINDER_COLOR_OPTIONS, REMINDER_UNIT_OPTIONS } from "../types";
 import type { ReminderType, ReminderTypeUpdateInput } from "../types";
 
 interface ReminderTypeRowProps {
@@ -23,6 +23,10 @@ export default function ReminderTypeRow({ type, onUpdate, onDelete }: ReminderTy
   const [color, setColor] = useState(type.color);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const unitOptions = REMINDER_UNIT_OPTIONS.includes(type.unit as (typeof REMINDER_UNIT_OPTIONS)[number])
+    ? REMINDER_UNIT_OPTIONS
+    : [type.unit, ...REMINDER_UNIT_OPTIONS];
 
   async function handleSave() {
     if (!name.trim()) {
@@ -62,7 +66,13 @@ export default function ReminderTypeRow({ type, onUpdate, onDelete }: ReminderTy
           </div>
           <div>
             <label className={labelClass}>Unidade</label>
-            <input value={unit} onChange={(event) => setUnit(event.target.value)} className={inputClass} />
+            <select value={unit} onChange={(event) => setUnit(event.target.value)} className={inputClass}>
+              {unitOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className={labelClass}>Meta diária</label>

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { REMINDER_COLOR_OPTIONS } from "../types";
+import { REMINDER_COLOR_OPTIONS, REMINDER_UNIT_OPTIONS } from "../types";
 import type { NewReminderTypeInput } from "../types";
 
 interface ReminderTypeFormProps {
@@ -75,14 +75,13 @@ export default function ReminderTypeForm({ onSubmit, onCancel }: ReminderTypeFor
           <label htmlFor="unit" className={labelClass}>
             Unidade
           </label>
-          <input
-            id="unit"
-            type="text"
-            placeholder="copos, comprimidos, vezes..."
-            value={unit}
-            onChange={(event) => setUnit(event.target.value)}
-            className={inputClass}
-          />
+          <select id="unit" value={unit} onChange={(event) => setUnit(event.target.value)} className={inputClass}>
+            {REMINDER_UNIT_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>
