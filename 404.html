@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Assistente Diário</title>
+    <script>
+      // O GitHub Pages não sabe fazer client-side routing — quando alguém
+      // atualiza a página numa rota tipo /tarefas, cai aqui (404.html).
+      // Este truque codifica o caminho numa query string e redireciona
+      // para o index.html, que depois o restaura antes da app arrancar.
+      var pathSegmentsToKeep = 1; // "/AssitenteDiario" conta como 1 segmento
+      var loc = window.location;
+      var newUrl =
+        loc.protocol +
+        "//" +
+        loc.hostname +
+        (loc.port ? ":" + loc.port : "") +
+        loc.pathname.split("/").slice(0, 1 + pathSegmentsToKeep).join("/") +
+        "/?/" +
+        loc.pathname
+          .slice(1)
+          .split("/")
+          .slice(pathSegmentsToKeep)
+          .join("/")
+          .replace(/&/g, "~and~") +
+        (loc.search ? "&" + loc.search.slice(1).replace(/&/g, "~and~") : "") +
+        loc.hash;
+      window.location.replace(newUrl);
+    </script>
+  </head>
+  <body></body>
+</html>
