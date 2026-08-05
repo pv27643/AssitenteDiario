@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { Eye, EyeOff, Pencil } from "lucide-react";
+import ConfirmButton from "@/shared/components/ConfirmButton";
 import { REMINDER_COLOR_OPTIONS } from "../types";
 import type { ReminderType, ReminderTypeUpdateInput } from "../types";
 
 interface ReminderTypeRowProps {
   type: ReminderType;
   onUpdate: (id: string, input: ReminderTypeUpdateInput) => Promise<{ error: string | null }>;
+  onDelete: (id: string) => void;
 }
 
 const inputClass =
   "min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500";
 const labelClass = "mb-1 block text-xs font-medium text-zinc-400";
 
-export default function ReminderTypeRow({ type, onUpdate }: ReminderTypeRowProps) {
+export default function ReminderTypeRow({ type, onUpdate, onDelete }: ReminderTypeRowProps) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(type.name);
   const [unit, setUnit] = useState(type.unit);
@@ -156,6 +158,7 @@ export default function ReminderTypeRow({ type, onUpdate }: ReminderTypeRowProps
         >
           {type.active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
+        <ConfirmButton label={`Eliminar ${type.name}`} onConfirm={() => onDelete(type.id)} />
       </div>
     </div>
   );

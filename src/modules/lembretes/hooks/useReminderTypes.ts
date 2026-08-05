@@ -14,9 +14,10 @@ interface UseReminderTypesResult {
   error: string | null;
   createReminderType: (input: NewReminderTypeInput) => Promise<MutationResult>;
   updateReminderType: (id: string, input: ReminderTypeUpdateInput) => Promise<MutationResult>;
+  deleteReminderType: (id: string) => Promise<MutationResult>;
 }
 
-/** CRUD de tipos de lembrete (sem delete — desativar preserva o histórico). */
+/** CRUD de tipos de lembrete — desativar preserva o histórico; eliminar arrasta-o. */
 export function useReminderTypes(): UseReminderTypesResult {
   const { user } = useAuth();
   const [reminderTypes, setReminderTypes] = useState<ReminderType[]>([]);
@@ -82,7 +83,26 @@ export function useReminderTypes(): UseReminderTypesResult {
     return { error: null };
   }
 
+  async function deleteReminderType(id: string): Promise<MutationResult> {
+    const { error: deleteError } = await supabase.from("reminder_types").delete().eq("id", id);
+
+    if (deleteError) {
+      return { error: "Não foi possível eliminar o tipo de lembrete." };
+    }
+
+    await load();
+    return { error: null };
+  }
+
   const activeReminderTypes = reminderTypes.filter((type) => type.active);
 
-  return { reminderTypes, activeReminderTypes, loading, error, createReminderType, updateReminderType };
+  return {
+    reminderTypes,
+    activeReminderTypes,
+    loading,
+    error,
+    createReminderType,
+    updateReminderType,
+    deleteReminderType,
+  };
 }

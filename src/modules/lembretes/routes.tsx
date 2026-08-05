@@ -1,9 +1,17 @@
+import { useState } from "react";
 import { useReminderTypes } from "./hooks/useReminderTypes";
 import ReminderTypeForm from "./components/ReminderTypeForm";
 import ReminderTypeRow from "./components/ReminderTypeRow";
 
 export default function LembretesPage() {
-  const { reminderTypes, loading, error, createReminderType, updateReminderType } = useReminderTypes();
+  const { reminderTypes, loading, error, createReminderType, updateReminderType, deleteReminderType } =
+    useReminderTypes();
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  async function handleDelete(id: string) {
+    const { error: deleteError } = await deleteReminderType(id);
+    if (deleteError) setActionError(deleteError);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -11,7 +19,7 @@ export default function LembretesPage() {
 
       <ReminderTypeForm onSubmit={createReminderType} />
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {(error || actionError) && <p className="text-sm text-red-500">{error ?? actionError}</p>}
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold text-white">Os teus tipos de lembrete</h2>
@@ -23,7 +31,7 @@ export default function LembretesPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {reminderTypes.map((type) => (
-              <ReminderTypeRow key={type.id} type={type} onUpdate={updateReminderType} />
+              <ReminderTypeRow key={type.id} type={type} onUpdate={updateReminderType} onDelete={handleDelete} />
             ))}
           </div>
         )}
