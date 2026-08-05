@@ -118,6 +118,60 @@ create table reminder_logs (
   logged_at timestamptz default now(),
   note text                        -- opcional: dose, observação, etc.
 );
+
+-- planos de treino
+create table workout_plans (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users not null,
+  name text not null,
+  created_at timestamptz default now()
+);
+
+-- exercícios de um plano, ordenados (position)
+create table plan_exercises (
+  id uuid primary key default gen_random_uuid(),
+  plan_id uuid references workout_plans(id) on delete cascade not null,
+  name text not null,
+  sets int not null,
+  reps int not null,
+  rest_seconds int not null default 60,
+  position int not null default 0
+);
+
+-- uma sessão de treino: a partir de um plano (plan_id) ou livre (plan_id nulo)
+create table workout_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users not null,
+  plan_id uuid references workout_plans(id) on delete set null,
+  started_at timestamptz default now(),
+  duration_minutes int              -- preenchido quando a sessão termina
+);
+
+-- exercícios de uma sessão concreta — nome copiado do plano na altura
+-- (não muda se o plano for editado depois); sets/reps/weight são o que
+-- foi realmente feito, não a meta do plano
+create table session_exercises (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid references workout_sessions(id) on delete cascade not null,
+  name text not null,
+  position int not null default 0,
+  sets int,
+  reps int,
+  weight numeric,
+  rest_seconds int not null default 60
+);
+
+-- metas (ex: correr 10km, supino 80kg)
+create table goals (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users not null,
+  title text not null,
+  target_value numeric not null,
+  current_value numeric not null default 0,
+  unit text not null default '',
+  deadline date,
+  status text not null default 'ativa'  -- 'ativa' | 'concluida' | 'cancelada'
+);
 ```
 
 Ativar Row Level Security em todas as tabelas, com política `user_id = auth.uid()` para leitura e escrita — cada um só vê os seus dados.
@@ -131,6 +185,7 @@ Ativar Row Level Security em todas as tabelas, com política `user_id = auth.uid
 | `/tarefas` | Tarefas | lista/kanban, filtros por prioridade e estado |
 | `/calendario` | Calendário | vista mensal/semanal, eventos ligados a tarefas com prazo |
 | `/lembretes` | Lembretes | gerir os teus tipos de lembrete (criar, editar, desativar) e ver histórico |
+| `/treinos` | Treinos | planos de treino, sessão ativa com temporizador, histórico e metas |
 | `/login` | Login | autenticação por nome de utilizador + PIN |
 
 Cada lembrete ativo aparece também como widget automático no Dashboard — não precisas de rota própria por tipo.
@@ -162,6 +217,13 @@ Cada lembrete ativo aparece também como widget automático no Dashboard — nã
 - Registo rápido ("+1") e ajuste do intervalo por tipo, com histórico completo por tipo
 - Editar ou desativar um tipo sem apagar o histórico já registado
 - Fase 2: notificação real via browser Notifications API ou webhook n8n
+
+**Treinos**
+- Planos de treino: nome + lista ordenada de exercícios (nome, séries, repetições, segundos de descanso), com interface para reordenar
+- Sessão: a partir de um plano existente (pré-preenche os exercícios) ou livre (adiciona exercícios à mão); regista séries, repetições e carga realmente feitas por exercício
+- Temporizador reutilizável com dois modos: descanso entre séries (contagem decrescente editável, com som/vibração no fim, saltar ou +15s) e cronómetro da sessão (iniciar/pausar/parar, grava a duração no fim)
+- Histórico de sessões agrupado por semana ou por mês
+- Metas: título, valor-alvo, valor atual, unidade, prazo opcional e estado, com barra de progresso e atualização rápida do valor atual
 
 ## 6. MVP vs. Fase 2
 
