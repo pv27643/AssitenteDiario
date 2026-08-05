@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { TASK_PRIORITIES, TASK_RECURRENCE_OPTIONS, TASK_STATUSES } from "../types";
-import type { NewTaskInput, Tag, TaskPriority, TaskRecurrence, TaskStatus, TaskWithRelations } from "../types";
+import { TASK_RECURRENCE_OPTIONS, TASK_STATUSES } from "../types";
+import type { NewTaskInput, Tag, TaskRecurrence, TaskStatus, TaskWithRelations } from "../types";
 import TagMultiSelect from "./TagMultiSelect";
 
 interface TaskFormProps {
@@ -19,7 +19,6 @@ export default function TaskForm({ tags, onCreateTag, initialTask, onSubmit, onC
   const isEditing = initialTask !== undefined;
 
   const [title, setTitle] = useState(initialTask?.title ?? "");
-  const [priority, setPriority] = useState<TaskPriority>(initialTask?.priority ?? "media");
   const [status, setStatus] = useState<TaskStatus>(initialTask?.status ?? "por_fazer");
   const [dueDate, setDueDate] = useState(initialTask?.due_date ?? "");
   const [recurrence, setRecurrence] = useState<TaskRecurrence>(initialTask?.recurrence ?? null);
@@ -39,7 +38,6 @@ export default function TaskForm({ tags, onCreateTag, initialTask, onSubmit, onC
     setSubmitting(true);
     const { error: submitError } = await onSubmit({
       title: title.trim(),
-      priority,
       status,
       due_date: dueDate || null,
       recurrence,
@@ -54,7 +52,6 @@ export default function TaskForm({ tags, onCreateTag, initialTask, onSubmit, onC
 
     if (!isEditing) {
       setTitle("");
-      setPriority("media");
       setStatus("por_fazer");
       setDueDate("");
       setRecurrence(null);
@@ -77,24 +74,6 @@ export default function TaskForm({ tags, onCreateTag, initialTask, onSubmit, onC
             className={inputClass}
             required
           />
-        </div>
-
-        <div>
-          <label htmlFor="priority" className={labelClass}>
-            Prioridade
-          </label>
-          <select
-            id="priority"
-            value={priority}
-            onChange={(event) => setPriority(event.target.value as TaskPriority)}
-            className={inputClass}
-          >
-            {TASK_PRIORITIES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
         </div>
 
         <div>

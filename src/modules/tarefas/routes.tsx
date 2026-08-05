@@ -2,17 +2,9 @@ import { useMemo, useState } from "react";
 import { useTasks } from "./hooks/useTasks";
 import TaskForm from "./components/TaskForm";
 import KanbanColumn from "./components/KanbanColumn";
-import { TASK_PRIORITIES, TASK_STATUSES } from "./types";
-import type { NewTaskInput, TaskPriority, TaskStatus } from "./types";
+import { TASK_STATUSES } from "./types";
+import type { NewTaskInput, TaskStatus } from "./types";
 import { compareTasks } from "./utils";
-
-type PriorityFilter = "todas" | TaskPriority;
-
-function filterButtonClass(isActive: boolean): string {
-  return `min-h-11 flex-1 rounded-lg px-3 text-sm font-medium transition-colors ${
-    isActive ? "bg-red-500/10 text-red-500" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
-  }`;
-}
 
 function statusChipClass(isVisible: boolean): string {
   return `min-h-11 rounded-lg border px-3 text-sm font-medium transition-colors ${
@@ -39,18 +31,12 @@ export default function TarefasPage() {
   } = useTasks();
 
   const [showForm, setShowForm] = useState(false);
-  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("todas");
   const [visibleStatuses, setVisibleStatuses] = useState<Set<TaskStatus>>(
     () => new Set(TASK_STATUSES.map((option) => option.value)),
   );
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const filteredTasks = useMemo(() => {
-    return tasks
-      .filter((task) => priorityFilter === "todas" || task.priority === priorityFilter)
-      .slice()
-      .sort(compareTasks);
-  }, [tasks, priorityFilter]);
+  const filteredTasks = useMemo(() => tasks.slice().sort(compareTasks), [tasks]);
 
   const columns = TASK_STATUSES.filter((option) => visibleStatuses.has(option.value));
   const gridColsClass =
@@ -112,26 +98,6 @@ export default function TarefasPage() {
       {(error || actionError) && <p className="text-sm text-red-500">{error ?? actionError}</p>}
 
       <div className="flex flex-col gap-3">
-        <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900 p-1">
-          <button
-            type="button"
-            onClick={() => setPriorityFilter("todas")}
-            className={filterButtonClass(priorityFilter === "todas")}
-          >
-            Todas
-          </button>
-          {TASK_PRIORITIES.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => setPriorityFilter(option.value)}
-              className={filterButtonClass(priorityFilter === option.value)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-
         <div className="flex flex-wrap gap-2">
           {TASK_STATUSES.map((option) => (
             <button

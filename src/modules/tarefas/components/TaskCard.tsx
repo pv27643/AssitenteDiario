@@ -1,7 +1,7 @@
 import { useState, type DragEvent } from "react";
 import { AlertCircle, ChevronDown, ChevronUp, Pencil, Repeat } from "lucide-react";
 import ConfirmButton from "@/shared/components/ConfirmButton";
-import { TASK_PRIORITIES, TASK_RECURRENCE_OPTIONS, TASK_STATUSES } from "../types";
+import { TASK_RECURRENCE_OPTIONS, TASK_STATUSES } from "../types";
 import type { NewTaskInput, Tag, TaskStatus, TaskWithRelations } from "../types";
 import { formatDate, isOverdue } from "../utils";
 import TaskForm from "./TaskForm";
@@ -19,7 +19,6 @@ interface TaskCardProps {
   onDeleteSubtask: (subtaskId: string) => Promise<{ error: string | null }>;
 }
 
-const priorityLabel = new Map(TASK_PRIORITIES.map((option) => [option.value, option.label]));
 const recurrenceLabel = new Map(TASK_RECURRENCE_OPTIONS.map((option) => [option.value, option.label]));
 
 export default function TaskCard({
@@ -83,7 +82,6 @@ export default function TaskCard({
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
-        <span className="rounded-full border border-zinc-700 px-2 py-0.5">{priorityLabel.get(task.priority)}</span>
         {task.due_date && (
           <span className={`flex items-center gap-1 ${overdue ? "text-red-500" : "text-zinc-400"}`}>
             {overdue && <AlertCircle className="h-3.5 w-3.5" />}

@@ -1,4 +1,4 @@
-import type { Task, TaskPriority, TaskRecurrence } from "./types";
+import type { Task, TaskRecurrence } from "./types";
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -30,13 +30,8 @@ export function computeNextDueDate(currentDueDate: string | null, recurrence: No
   return `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`;
 }
 
-const PRIORITY_RANK: Record<TaskPriority, number> = { alta: 0, media: 1, baixa: 2 };
-
-/** Prioridade mais alta primeiro; dentro da mesma prioridade, prazo mais próximo primeiro. */
+/** Prazo mais próximo primeiro; tarefas sem prazo ficam no fim. */
 export function compareTasks(a: Task, b: Task): number {
-  const rankDiff = PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
-  if (rankDiff !== 0) return rankDiff;
-
   if (a.due_date && b.due_date) return a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : 0;
   if (a.due_date) return -1;
   if (b.due_date) return 1;

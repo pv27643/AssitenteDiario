@@ -96,7 +96,6 @@ export function useTasks(): UseTasksResult {
       .insert({
         user_id: user.id,
         title: input.title,
-        priority: input.priority,
         status: input.status ?? "por_fazer",
         due_date: input.due_date ?? null,
         recurrence: input.recurrence ?? null,
@@ -136,7 +135,6 @@ export function useTasks(): UseTasksResult {
       await supabase.from("tasks").insert({
         user_id: original.user_id,
         title: original.title,
-        priority: original.priority,
         status: "por_fazer",
         due_date: nextDueDate,
         recurrence: original.recurrence,

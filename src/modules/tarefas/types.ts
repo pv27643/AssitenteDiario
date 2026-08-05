@@ -1,4 +1,3 @@
-export type TaskPriority = "baixa" | "media" | "alta";
 export type TaskStatus = "por_fazer" | "em_curso" | "feito";
 export type TaskRecurrence = "diaria" | "semanal" | "mensal" | null;
 
@@ -6,7 +5,6 @@ export interface Task {
   id: string;
   user_id: string;
   title: string;
-  priority: TaskPriority;
   status: TaskStatus;
   due_date: string | null;
   recurrence: TaskRecurrence;
@@ -35,7 +33,6 @@ export interface TaskWithRelations extends Task {
 
 export interface NewTaskInput {
   title: string;
-  priority: TaskPriority;
   status?: TaskStatus;
   due_date?: string | null;
   recurrence?: TaskRecurrence;
@@ -44,17 +41,10 @@ export interface NewTaskInput {
 
 export type TaskUpdateInput = Partial<{
   title: string;
-  priority: TaskPriority;
   status: TaskStatus;
   due_date: string | null;
   recurrence: TaskRecurrence;
 }>;
-
-export const TASK_PRIORITIES: { value: TaskPriority; label: string }[] = [
-  { value: "baixa", label: "Baixa" },
-  { value: "media", label: "Média" },
-  { value: "alta", label: "Alta" },
-];
 
 export const TASK_STATUSES: { value: TaskStatus; label: string }[] = [
   { value: "por_fazer", label: "Por fazer" },
