@@ -4,13 +4,14 @@ import type { NewReminderTypeInput } from "../types";
 
 interface ReminderTypeFormProps {
   onSubmit: (input: NewReminderTypeInput) => Promise<{ error: string | null }>;
+  onCancel?: () => void;
 }
 
 const inputClass =
   "min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500";
 const labelClass = "mb-1 block text-sm font-medium text-zinc-300";
 
-export default function ReminderTypeForm({ onSubmit }: ReminderTypeFormProps) {
+export default function ReminderTypeForm({ onSubmit, onCancel }: ReminderTypeFormProps) {
   const [name, setName] = useState("");
   const [unit, setUnit] = useState("vez");
   const [dailyGoal, setDailyGoal] = useState("");
@@ -51,10 +52,7 @@ export default function ReminderTypeForm({ onSubmit }: ReminderTypeFormProps) {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 rounded-xl border border-zinc-800 bg-zinc-900 p-4 sm:p-6"
-    >
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <h2 className="text-sm font-semibold text-white">Criar novo tipo de lembrete</h2>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -133,13 +131,24 @@ export default function ReminderTypeForm({ onSubmit }: ReminderTypeFormProps) {
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="min-h-11 self-start rounded-lg bg-red-600 px-5 text-sm font-medium text-white transition-colors hover:bg-red-500 disabled:opacity-50"
-      >
-        {submitting ? "A criar..." : "Criar tipo de lembrete"}
-      </button>
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="min-h-11 self-start rounded-lg bg-red-600 px-5 text-sm font-medium text-white transition-colors hover:bg-red-500 disabled:opacity-50"
+        >
+          {submitting ? "A criar..." : "Criar tipo de lembrete"}
+        </button>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="min-h-11 rounded-lg border border-zinc-700 px-5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
+          >
+            Cancelar
+          </button>
+        )}
+      </div>
     </form>
   );
 }
