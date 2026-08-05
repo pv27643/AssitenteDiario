@@ -34,8 +34,8 @@ function sidebarLinkClass({ isActive }: { isActive: boolean }): string {
 }
 
 function bottomNavLinkClass({ isActive }: { isActive: boolean }): string {
-  return `flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors ${
-    isActive ? "text-red-500" : "text-zinc-500"
+  return `flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-medium transition-colors ${
+    isActive ? "bg-red-500/10 text-red-500" : "text-zinc-500 hover:text-zinc-300"
   }`;
 }
 
@@ -88,17 +88,19 @@ export default function Layout() {
           <Outlet />
         </main>
 
-        {/* Barra de separadores fixa em baixo — só em ecrã estreito */}
+        {/* Barra de separadores flutuante — só em ecrã estreito */}
         <nav
-          className="fixed inset-x-0 bottom-0 z-10 flex border-t border-zinc-800 bg-zinc-950 pt-1 md:hidden"
-          style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)" }}
+          className="fixed inset-x-0 bottom-0 z-10 flex justify-center px-3 md:hidden"
+          style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.75rem)" }}
         >
-          {navItems.map((item) => (
-            <NavLink key={item.id} to={item.path} end={item.end} className={bottomNavLinkClass}>
-              <item.icon className="h-5 w-5" />
-              {item.label}
-            </NavLink>
-          ))}
+          <div className="flex w-full max-w-md items-center gap-1 rounded-2xl border border-zinc-800 bg-zinc-900/95 p-1.5 shadow-lg shadow-black/40 backdrop-blur">
+            {navItems.map((item) => (
+              <NavLink key={item.id} to={item.path} end={item.end} className={bottomNavLinkClass}>
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
         </nav>
       </div>
     </div>
